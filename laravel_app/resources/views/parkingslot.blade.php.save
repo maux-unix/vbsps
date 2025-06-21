@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Parking Slot</title>
+    <link rel="stylesheet" href="{{ asset('css/parkingslot.css') }}">
+</head>
+
+<body>
+    <nav>
+        <img src="{{ asset('BackGroundForAll/Logo.png') }}" alt="">
+        <div class="outerNavLink">
+            <a href="/">Live Parking Slot</a>
+            <a href="/parking-prediction">Parking Prediction</a>
+        </div>
+        <img src="{{ asset('BackGroundForAll/icons8-menu.svg') }}" alt="Menu" class="menu-icon" onclick="toggleSideMenu()">
+        <div class="side-menu" id="sideMenu">
+            <a href="/">Live Parking Slot</a>
+            <a href="/parking-prediction">Parking Prediction</a>
+        </div>
+    </nav>
+
+    <div class="main-div">
+        <div class="header">
+            <h1>Live Parking Slot</h1>
+            <p class="update-time">Last updated: {{ $date }} {{ $time }}</p>
+        </div>
+	<p>Free Slot = $freeslot </p>
+        <p class="keterangan">
+            <span class="red">Red</span> means someone park there,
+            <span class="blank">Blank</span> means empty parking slot
+        </p>
+        <div class="outerContainer">
+            <div class="container">
+                <div class="entrance">entrance</div>
+                <div class="exit">exit</div>
+                <div class="seat-container" id="seatContainer"></div>
+                <div class="controls">
+                    <button onclick="randomizeSeats()">Randomize Seats</button>
+                    <button onclick="resetSeats()">Reset All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Inject server data into JS
+        let seatStatus = @json(array_map(fn($v) => $v === 1, $slot));
+
+        function getDesktopIndex(mobileIndex) {
+            const mobileRow = Math.floor(mobileIndex / 2);
+            const mobileCol = mobileIndex % 2;
+            const adjustedCol = mobileCol === 0 ? 1 : 0;
+            return adjustedCol * 8 + mobileRow;
+        }
+
+        function renderSeats() {
+            const seatContainer = document.getElementById('seatContainer');
+            seatContainer.innerHTML = '';
+            const isMobile = window.innerWidth < 1000;
+
+            for (let visualIndex = 0; visualIndex < 16; visualIndex++) {
+                const logicalIndex = isMobile
+                    ? getDesktopIndex(visualIndex)
+                    : visualIndex;
+
+                const seat = document.createElement('div');
+                seat.className = `seat ${seatStatus[logicalIndex] ? 'red' : 'white'}`;
+                seat.dataset.index = logicalIndex;
+
+                seat.addEventListener('click', () => {
+                    seatStatus[logicalIndex] = !seatStatus[logicalIndex];
+                    renderSeats();
+                });
+
+                seatContainer.appendChild(seat);
+            }
+        }
+
+        function randomizeSeats() {
+            for (let i = 0; i < 16; i++) {
+                seatStatus[i] = Math.random() > 0.7;
+            }
+            renderSeats();
+        }
+
+        function resetSeats() {
+            renderSeats();
+        }
+
+        function toggleSideMenu() {
+            document.getElementById('sideMenu').classList.toggle('show');
+        }
+
+        window.onload = () => {
+            renderSeats();
+            window.addEventListener('resize', renderSeats);
+            // auto-refresh every 10 seconds:
+            setInterval(() => { window.location.reload() }, 10000);
+        };
+    </script>
+</body>
+
+</html>
+
